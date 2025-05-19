@@ -4,6 +4,8 @@ import subprocess
 import sys
 import random
 
+test 
+
 try:
     import pyperclip
 except ImportError:
@@ -93,6 +95,7 @@ class PresentCipherApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Encryption Pig")
+ 
 
         for i in range(10):
             root.grid_rowconfigure(i, weight=1)

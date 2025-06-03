@@ -1,10 +1,7 @@
-import tkinter as tk
-from tkinter import messagebox
+import customtkinter as ctk
 import subprocess
 import sys
 import random
-
-test 
 
 try:
     import pyperclip
@@ -12,14 +9,13 @@ except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "pyperclip"])
     import pyperclip
 
+# PRESENT cipher core
 SBOX = [0xC, 0x5, 0x6, 0xB, 0x9, 0x0, 0xA, 0xD, 0x3, 0xE, 0xF, 0x8, 0x4, 0x7, 0x1, 0x2]
 SBOX_INV = [SBOX.index(x) for x in range(16)]
-PBOX = [
-    0, 16, 32, 48, 1, 17, 33, 49, 2, 18, 34, 50, 3, 19, 35, 51,
-    4, 20, 36, 52, 5, 21, 37, 53, 6, 22, 38, 54, 7, 23, 39, 55,
-    8, 24, 40, 56, 9, 25, 41, 57, 10, 26, 42, 58, 11, 27, 43, 59,
-    12, 28, 44, 60, 13, 29, 45, 61, 14, 30, 46, 62, 15, 31, 47, 63
-]
+PBOX = [0, 16, 32, 48, 1, 17, 33, 49, 2, 18, 34, 50, 3, 19, 35, 51,
+        4, 20, 36, 52, 5, 21, 37, 53, 6, 22, 38, 54, 7, 23, 39, 55,
+        8, 24, 40, 56, 9, 25, 41, 57, 10, 26, 42, 58, 11, 27, 43, 59,
+        12, 28, 44, 60, 13, 29, 45, 61, 14, 30, 46, 62, 15, 31, 47, 63]
 PBOX_INV = [PBOX.index(x) for x in range(64)]
 ROUND_KEYS = []
 
@@ -33,22 +29,15 @@ def generate_round_keys80(key):
         key = (key & ~(0xF << 76)) | (SBOX[sbox_in] << 76)
         key ^= round_counter << 15
 
-def add_round_key(state, round_key):
-    return state ^ round_key
+def add_round_key(state, round_key): return state ^ round_key
 
-def sbox_layer(state):
-    return int(''.join(f"{SBOX[(state >> (4 * i)) & 0xF]:04b}" for i in reversed(range(16))), 2)
+def sbox_layer(state): return int(''.join(f"{SBOX[(state >> (4 * i)) & 0xF]:04b}" for i in reversed(range(16))), 2)
 
-def sbox_layer_inv(state):
-    return int(''.join(f"{SBOX_INV[(state >> (4 * i)) & 0xF]:04b}" for i in reversed(range(16))), 2)
+def sbox_layer_inv(state): return int(''.join(f"{SBOX_INV[(state >> (4 * i)) & 0xF]:04b}" for i in reversed(range(16))), 2)
 
-def pbox_layer(state):
-    bits = f"{state:064b}"
-    return int(''.join(bits[PBOX[i]] for i in range(64)), 2)
+def pbox_layer(state): return int(''.join(f"{state:064b}"[PBOX[i]] for i in range(64)), 2)
 
-def pbox_layer_inv(state):
-    bits = f"{state:064b}"
-    return int(''.join(bits[PBOX_INV[i]] for i in range(64)), 2)
+def pbox_layer_inv(state): return int(''.join(f"{state:064b}"[PBOX_INV[i]] for i in range(64)), 2)
 
 def present_encrypt80(plain, key):
     generate_round_keys80(key)
@@ -70,11 +59,7 @@ def present_decrypt80(cipher, key):
 
 def pad_text_to_blocks(text):
     data = text.encode('utf-8')
-    blocks = []
-    for i in range(0, len(data), 8):
-        block = data[i:i+8].ljust(8, b'\x00')
-        blocks.append(int.from_bytes(block, 'big'))
-    return blocks
+    return [int.from_bytes(data[i:i+8].ljust(8, b'\x00'), 'big') for i in range(0, len(data), 8)]
 
 def unpad_blocks_to_text(blocks):
     data = b''.join(b.to_bytes(8, 'big') for b in blocks)
@@ -83,72 +68,78 @@ def unpad_blocks_to_text(blocks):
     except:
         return data.hex()
 
-def generate_random_key():
-    return ''.join(random.choices('0123456789ABCDEF', k=20))
+def generate_random_key(): return ''.join(random.choices('0123456789ABCDEF', k=20))
 
-def enable_copy_paste(widget):
-    widget.bind("<Control-c>", lambda e: widget.event_generate("<<Copy>>"))
-    widget.bind("<Control-v>", lambda e: widget.event_generate("<<Paste>>"))
-    widget.bind("<Control-x>", lambda e: widget.event_generate("<<Cut>>"))
 
 class PresentCipherApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Encryption Pig")
- 
+        self.root.title("Encryption Pig - CustomTkinter")
+        self.root.configure(fg_color="#FADADD")  # <-- здесь поменял
 
-        for i in range(10):
-            root.grid_rowconfigure(i, weight=1)
-        root.grid_columnconfigure(1, weight=1)
+        ctk.set_appearance_mode("light")
+        ctk.set_default_color_theme("blue")
 
-        tk.Label(root, text="Text to Encrypt:").grid(row=0, column=0, sticky="nw", padx=10, pady=5)
-        self.input_text = tk.Text(root, height=4, wrap="word")
-        self.input_text.grid(row=0, column=1, sticky="nsew", padx=10, pady=5)
-        enable_copy_paste(self.input_text)
+        font = ("TT Fors Trial", 14)
+        text_color = "#382A2E"
+        box_color = "#FFEEF3"
+        button_color = "#E491A5"
 
-        tk.Button(root, text="Paste to Encrypt", command=self.paste_to_encrypt).grid(row=0, column=2, sticky="n", padx=5, pady=5)
+    # остальные виджеты с fg_color=box_color для инпутов
 
-        tk.Label(root, text="Text to Decrypt (hex):").grid(row=1, column=0, sticky="nw", padx=10, pady=5)
-        self.decrypt_text = tk.Text(root, height=4, wrap="word")
-        self.decrypt_text.grid(row=1, column=1, sticky="nsew", padx=10, pady=5)
-        enable_copy_paste(self.decrypt_text)
 
-        tk.Button(root, text="Paste to Decrypt", command=self.paste_to_decrypt).grid(row=1, column=2, sticky="n", padx=5, pady=5)
+        ctk.CTkLabel(root, text="Text to Encrypt:", font=font, text_color=text_color).grid(row=0, column=0, padx=10, pady=(10, 0), sticky="w")
+        self.input_text = ctk.CTkTextbox(root, height=100, font=font, text_color=text_color, fg_color=box_color)
+        self.input_text.grid(row=0, column=1, padx=10, pady=(10, 0), sticky="ew")
+        ctk.CTkButton(root, text="Paste to Encrypt", command=self.paste_to_encrypt, fg_color=button_color, text_color=text_color).grid(row=0, column=2, padx=5, pady=10)
 
-        tk.Label(root, text="Key (hex, 80-bit):").grid(row=2, column=0, sticky="nw", padx=10, pady=5)
-        self.key_entry = tk.Entry(root)
-        self.key_entry.grid(row=2, column=1, sticky="ew", padx=10, pady=5)
-        enable_copy_paste(self.key_entry)
+        ctk.CTkLabel(root, text="Text to Decrypt:", font=font, text_color=text_color).grid(row=1, column=0, padx=10, pady=10, sticky="w")
+        self.decrypt_text = ctk.CTkTextbox(root, height=100, font=font, text_color=text_color, fg_color=box_color)
+        self.decrypt_text.grid(row=1, column=1, padx=10, pady=10, sticky="ew")
+        ctk.CTkButton(root, text="Paste to Decrypt", command=self.paste_to_decrypt, fg_color=button_color, text_color=text_color).grid(row=1, column=2, padx=5, pady=10)
 
-        key_button_frame = tk.Frame(root)
-        key_button_frame.grid(row=3, column=1, sticky="e", padx=10)
-        tk.Button(key_button_frame, text="Copy Key", command=self.copy_key).pack(side="right", padx=5)
-        tk.Button(key_button_frame, text="Generate Key", command=self.generate_key).pack(side="right", padx=5)
+        ctk.CTkLabel(root, text="Key:", font=font, text_color=text_color).grid(row=2, column=0, padx=10, pady=(0, 10), sticky="w")
+        self.key_entry = ctk.CTkEntry(root, placeholder_text="80-bit key (20 hex chars)", font=font, text_color=text_color, fg_color=box_color)
+        self.key_entry.grid(row=2, column=1, padx=10, pady=(0, 10), sticky="ew")
 
-        button_frame = tk.Frame(root)
-        button_frame.grid(row=4, column=0, columnspan=2, pady=5)
-        tk.Button(button_frame, text="Encrypt", command=self.encrypt).pack(side="left", padx=5)
-        tk.Button(button_frame, text="Decrypt", command=self.decrypt).pack(side="left", padx=5)
-        tk.Button(button_frame, text="Copy Result", command=self.copy_result).pack(side="left", padx=5)
-        tk.Button(button_frame, text="Clear All", command=self.clear_all).pack(side="left", padx=5)
+        key_button_frame = ctk.CTkFrame(root, fg_color="transparent")
+        key_button_frame.grid(row=2, column=2, padx=5, pady=(0, 10), sticky="e")
+        ctk.CTkButton(key_button_frame, text="Generate Key", command=self.generate_key, fg_color=button_color, text_color=text_color).pack(side="left", padx=5)
+        ctk.CTkButton(key_button_frame, text="Copy Key", command=self.copy_key, fg_color=button_color, text_color=text_color).pack(side="left")
 
-        tk.Label(root, text="Result:").grid(row=5, column=0, sticky="nw", padx=10)
-        self.result_text = tk.Text(root, height=4, wrap="word")
-        self.result_text.grid(row=5, column=1, sticky="nsew", padx=10, pady=5)
+        button_frame = ctk.CTkFrame(root, fg_color="transparent")
+        button_frame.grid(row=3, column=0, columnspan=3, pady=5)
+        ctk.CTkButton(button_frame, text="Encrypt", command=self.encrypt, fg_color=button_color, text_color=text_color).pack(side="left", padx=5)
+        ctk.CTkButton(button_frame, text="Decrypt", command=self.decrypt, fg_color=button_color, text_color=text_color).pack(side="left", padx=5)
+        ctk.CTkButton(button_frame, text="Copy Result", command=self.copy_result, fg_color=button_color, text_color=text_color).pack(side="left", padx=5)
+        ctk.CTkButton(button_frame, text="Clear All", command=self.clear_all, fg_color=button_color, text_color=text_color).pack(side="left", padx=5)
+
+        ctk.CTkLabel(root, text="Result:", font=font, text_color=text_color).grid(row=4, column=0, padx=10, pady=(0, 0), sticky="w")
+        self.result_text = ctk.CTkTextbox(root, height=100, font=font, text_color=text_color, fg_color=box_color)
+        self.result_text.grid(row=5, column=0, columnspan=3, padx=10, pady=10, sticky="nsew")
         self.result_text.configure(state='normal')
-        enable_copy_paste(self.result_text)
 
-        self.status = tk.Label(root, text="Ready", anchor="w")
-        self.status.grid(row=6, column=0, columnspan=3, sticky="we", padx=10, pady=2)
+        self.status = ctk.CTkLabel(root, text="Ready", font=font, anchor="w", text_color=text_color)
+        self.status.grid(row=6, column=0, columnspan=3, padx=10, pady=(0, 10), sticky="we")
 
-    def paste_to_encrypt(self):
-        self.input_text.insert(tk.END, pyperclip.paste())
+        root.grid_columnconfigure(1, weight=1)
+        root.grid_rowconfigure(5, weight=1)
 
-    def paste_to_decrypt(self):
-        self.decrypt_text.insert(tk.END, pyperclip.paste())
+        self._bind_shortcuts(self.input_text)
+        self._bind_shortcuts(self.decrypt_text)
+        self._bind_shortcuts(self.result_text)
+        self._bind_shortcuts(self.key_entry)
+
+    def _bind_shortcuts(self, widget):
+        widget.bind("<Control-c>", lambda e: self.root.clipboard_append(widget.get("sel.first", "sel.last")))
+        widget.bind("<Control-v>", lambda e: widget.insert("insert", self.root.clipboard_get()))
+        widget.bind("<Control-x>", lambda e: (self.root.clipboard_append(widget.get("sel.first", "sel.last")), widget.delete("sel.first", "sel.last")))
+
+    def paste_to_encrypt(self): self.input_text.insert("end", pyperclip.paste())
+    def paste_to_decrypt(self): self.decrypt_text.insert("end", pyperclip.paste())
 
     def encrypt(self):
-        text = self.input_text.get("1.0", tk.END).strip()
+        text = self.input_text.get("1.0", "end").strip()
         key_hex = self.key_entry.get()
         try:
             blocks = pad_text_to_blocks(text)
@@ -160,11 +151,11 @@ class PresentCipherApp:
             self.show_result(result)
             self.set_status("Encrypted successfully.")
         except Exception as e:
-            messagebox.showerror("Encryption Error", str(e))
+            ctk.CTkMessagebox(title="Encryption Error", message=str(e))
             self.set_status("Encryption failed.")
 
     def decrypt(self):
-        hex_text = self.decrypt_text.get("1.0", tk.END).strip()
+        hex_text = self.decrypt_text.get("1.0", "end").strip()
         key_hex = self.key_entry.get()
         try:
             if len(hex_text) % 16 != 0:
@@ -178,56 +169,48 @@ class PresentCipherApp:
             self.show_result(result)
             self.set_status("Decrypted successfully.")
         except Exception as e:
-            messagebox.showerror("Decryption Error", str(e))
+            ctk.CTkMessagebox(title="Decryption Error", message=str(e))
             self.set_status("Decryption failed.")
 
     def show_result(self, content):
         self.result_text.configure(state='normal')
-        self.result_text.delete("1.0", tk.END)
-        self.result_text.insert(tk.END, content)
+        self.result_text.delete("1.0", "end")
+        self.result_text.insert("end", content)
         self.result_text.configure(state='disabled')
 
     def copy_result(self):
-        try:
-            content = self.result_text.get("1.0", tk.END).strip()
-            if content:
-                pyperclip.copy(content)
-                messagebox.showinfo("Copied", "Result copied to clipboard!")
-                self.set_status("Result copied.")
-        except Exception as e:
-            messagebox.showerror("Clipboard Error", str(e))
+        content = self.result_text.get("1.0", "end").strip()
+        if content:
+            pyperclip.copy(content)
+            self.set_status("Result copied.")
 
     def copy_key(self):
-        try:
-            key = self.key_entry.get().strip()
-            if key:
-                pyperclip.copy(key)
-                messagebox.showinfo("Copied", "Key copied to clipboard!")
-                self.set_status("Key copied.")
-        except Exception as e:
-            messagebox.showerror("Clipboard Error", str(e))
+        key = self.key_entry.get().strip()
+        if key:
+            pyperclip.copy(key)
+            self.set_status("Key copied.")
 
     def generate_key(self):
         key = generate_random_key()
-        self.key_entry.delete(0, tk.END)
+        self.key_entry.delete(0, "end")
         self.key_entry.insert(0, key)
         self.set_status("Random key generated.")
 
     def clear_all(self):
-        self.input_text.delete("1.0", tk.END)
-        self.decrypt_text.delete("1.0", tk.END)
-        self.key_entry.delete(0, tk.END)
+        self.input_text.delete("1.0", "end")
+        self.decrypt_text.delete("1.0", "end")
+        self.key_entry.delete(0, "end")
         self.result_text.configure(state='normal')
-        self.result_text.delete("1.0", tk.END)
+        self.result_text.delete("1.0", "end")
         self.result_text.configure(state='disabled')
         self.set_status("Cleared all fields.")
 
     def set_status(self, message):
-        self.status.config(text=message)
+        self.status.configure(text=message)
+
 
 if __name__ == '__main__':
-    root = tk.Tk()
+    root = ctk.CTk()
+    root.geometry("900x600")
     app = PresentCipherApp(root)
-    root.geometry("750x520")
-    root.minsize(500, 400)
     root.mainloop()

@@ -3,12 +3,24 @@ import subprocess
 import sys
 import random
 import os
+from tkinter import font as tkfont
 
 try:
     import pyperclip
 except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "pyperclip"])
     import pyperclip
+
+FONTS_DIR = os.path.join(os.path.dirname(__file__), "fonts")
+FONT_FILE = os.path.join(FONTS_DIR, "TTForsTrial.ttf")
+FONT_NAME = "TT Fors Trial"
+
+if os.path.exists(FONT_FILE):
+    try:
+        from ctypes import windll
+        windll.gdi32.AddFontResourceW(FONT_FILE)
+    except:
+        pass 
 
 SBOX = [0xC, 0x5, 0x6, 0xB, 0x9, 0x0, 0xA, 0xD, 0x3, 0xE, 0xF, 0x8, 0x4, 0x7, 0x1, 0x2]
 SBOX_INV = [SBOX.index(x) for x in range(16)]
@@ -30,13 +42,9 @@ def generate_round_keys80(key):
         key ^= round_counter << 15
 
 def add_round_key(state, round_key): return state ^ round_key
-
 def sbox_layer(state): return int(''.join(f"{SBOX[(state >> (4 * i)) & 0xF]:04b}" for i in reversed(range(16))), 2)
-
 def sbox_layer_inv(state): return int(''.join(f"{SBOX_INV[(state >> (4 * i)) & 0xF]:04b}" for i in reversed(range(16))), 2)
-
 def pbox_layer(state): return int(''.join(f"{state:064b}"[PBOX[i]] for i in range(64)), 2)
-
 def pbox_layer_inv(state): return int(''.join(f"{state:064b}"[PBOX_INV[i]] for i in range(64)), 2)
 
 def present_encrypt80(plain, key):
@@ -70,13 +78,12 @@ def unpad_blocks_to_text(blocks):
 
 def generate_random_key(): return ''.join(random.choices('0123456789ABCDEF', k=20))
 
-
 class PresentCipherApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Encryption Pig")
-        self.root.geometry("960x540")  
-        self.root.minsize(960, 540)
+        self.root.geometry("1280×720")
+        self.root.minsize(1280, 720)
 
         if os.path.exists("icon.ico"):
             try:
@@ -89,51 +96,46 @@ class PresentCipherApp:
         ctk.set_appearance_mode("light")
         ctk.set_default_color_theme("blue")
 
-        font = ("TT Fors Trial", 14)
+        self.custom_font = (FONT_NAME, 20)
+
         text_color = "#382A2E"
         box_color = "#FFEEF3"
         button_color = "#FB7E9D"
-
-
         border_width = 1
         border_color = "#B1556B"
 
-        ctk.CTkLabel(root, text="Text to Encrypt:", font=font, text_color=text_color).grid(row=0, column=0, padx=10, pady=(10, 0), sticky="w")
-        self.input_text = ctk.CTkTextbox(root, height=100, font=font, text_color=text_color, fg_color=box_color,
-                                        border_width=border_width, border_color=border_color)
+        ctk.CTkLabel(root, text="Text to Encrypt:", font=self.custom_font, text_color=text_color).grid(row=0, column=0, padx=10, pady=(10, 0), sticky="w")
+        self.input_text = ctk.CTkTextbox(root, height=100, font=self.custom_font, text_color=text_color, fg_color=box_color, border_width=border_width, border_color=border_color)
         self.input_text.grid(row=0, column=1, padx=10, pady=(10, 0), sticky="ew")
-        ctk.CTkButton(root, text="Paste to Encrypt", command=self.paste_to_encrypt, fg_color=button_color, text_color=text_color).grid(row=0, column=2, padx=5, pady=10)
+        ctk.CTkButton(root, text="Paste to Encrypt", font=self.custom_font, command=self.paste_to_encrypt, fg_color=button_color, text_color=text_color).grid(row=0, column=2, padx=5, pady=10)
 
-        ctk.CTkLabel(root, text="Text to Decrypt:", font=font, text_color=text_color).grid(row=1, column=0, padx=10, pady=10, sticky="w")
-        self.decrypt_text = ctk.CTkTextbox(root, height=100, font=font, text_color=text_color, fg_color=box_color,
-                                          border_width=border_width, border_color=border_color)
+        ctk.CTkLabel(root, text="Text to Decrypt:", font=self.custom_font, text_color=text_color).grid(row=1, column=0, padx=10, pady=10, sticky="w")
+        self.decrypt_text = ctk.CTkTextbox(root, height=100, font=self.custom_font, text_color=text_color, fg_color=box_color, border_width=border_width, border_color=border_color)
         self.decrypt_text.grid(row=1, column=1, padx=10, pady=10, sticky="ew")
-        ctk.CTkButton(root, text="Paste to Decrypt", command=self.paste_to_decrypt, fg_color=button_color, text_color=text_color).grid(row=1, column=2, padx=5, pady=10)
+        ctk.CTkButton(root, text="Paste to Decrypt", font=self.custom_font, command=self.paste_to_decrypt, fg_color=button_color, text_color=text_color).grid(row=1, column=2, padx=5, pady=10)
 
-        ctk.CTkLabel(root, text="Key:", font=font, text_color=text_color).grid(row=2, column=0, padx=10, pady=(0, 10), sticky="w")
-        self.key_entry = ctk.CTkEntry(root, placeholder_text="80-bit key (20 hex chars)", font=font, text_color=text_color, fg_color=box_color,
-                                     border_width=border_width, border_color=border_color)
+        ctk.CTkLabel(root, text="Key:", font=self.custom_font, text_color=text_color).grid(row=2, column=0, padx=10, pady=(0, 10), sticky="w")
+        self.key_entry = ctk.CTkEntry(root, placeholder_text="80-bit key (20 hex chars)", font=self.custom_font, text_color=text_color, fg_color=box_color, border_width=border_width, border_color=border_color)
         self.key_entry.grid(row=2, column=1, padx=10, pady=(0, 10), sticky="ew")
 
         key_button_frame = ctk.CTkFrame(root, fg_color="transparent")
         key_button_frame.grid(row=2, column=2, padx=5, pady=(0, 10), sticky="e")
-        ctk.CTkButton(key_button_frame, text="Generate Key", command=self.generate_key, fg_color=button_color, text_color=text_color).pack(side="left", padx=5)
-        ctk.CTkButton(key_button_frame, text="Copy Key", command=self.copy_key, fg_color=button_color, text_color=text_color).pack(side="left")
+        ctk.CTkButton(key_button_frame, text="Generate Key", font=self.custom_font, command=self.generate_key, fg_color=button_color, text_color=text_color).pack(side="left", padx=5)
+        ctk.CTkButton(key_button_frame, text="Copy Key", font=self.custom_font, command=self.copy_key, fg_color=button_color, text_color=text_color).pack(side="left")
 
         button_frame = ctk.CTkFrame(root, fg_color="transparent")
         button_frame.grid(row=3, column=0, columnspan=3, pady=5)
-        ctk.CTkButton(button_frame, text="Encrypt", command=self.encrypt, fg_color=button_color, text_color=text_color).pack(side="left", padx=5)
-        ctk.CTkButton(button_frame, text="Decrypt", command=self.decrypt, fg_color=button_color, text_color=text_color).pack(side="left", padx=5)
-        ctk.CTkButton(button_frame, text="Copy Result", command=self.copy_result, fg_color=button_color, text_color=text_color).pack(side="left", padx=5)
-        ctk.CTkButton(button_frame, text="Clear All", command=self.clear_all, fg_color=button_color, text_color=text_color).pack(side="left", padx=5)
+        ctk.CTkButton(button_frame, text="Encrypt", font=self.custom_font, command=self.encrypt, fg_color=button_color, text_color=text_color).pack(side="left", padx=5)
+        ctk.CTkButton(button_frame, text="Decrypt", font=self.custom_font, command=self.decrypt, fg_color=button_color, text_color=text_color).pack(side="left", padx=5)
+        ctk.CTkButton(button_frame, text="Copy Result", font=self.custom_font, command=self.copy_result, fg_color=button_color, text_color=text_color).pack(side="left", padx=5)
+        ctk.CTkButton(button_frame, text="Clear All", font=self.custom_font, command=self.clear_all, fg_color=button_color, text_color=text_color).pack(side="left", padx=5)
 
-        ctk.CTkLabel(root, text="Result:", font=font, text_color=text_color).grid(row=4, column=0, padx=10, pady=(0, 0), sticky="w")
-        self.result_text = ctk.CTkTextbox(root, height=100, font=font, text_color=text_color, fg_color=box_color,
-                                         border_width=border_width, border_color=border_color)
+        ctk.CTkLabel(root, text="Result:", font=self.custom_font, text_color=text_color).grid(row=4, column=0, padx=10, pady=(0, 0), sticky="w")
+        self.result_text = ctk.CTkTextbox(root, height=100, font=self.custom_font, text_color=text_color, fg_color=box_color, border_width=border_width, border_color=border_color)
         self.result_text.grid(row=5, column=0, columnspan=3, padx=10, pady=10, sticky="nsew")
         self.result_text.configure(state='normal')
 
-        self.status = ctk.CTkLabel(root, text="Ready", font=font, anchor="w", text_color=text_color)
+        self.status = ctk.CTkLabel(root, text="Ready", font=self.custom_font, anchor="w", text_color=text_color)
         self.status.grid(row=6, column=0, columnspan=3, padx=10, pady=(0, 10), sticky="we")
 
         root.grid_columnconfigure(1, weight=1)
@@ -165,7 +167,6 @@ class PresentCipherApp:
             self.show_result(result)
             self.set_status("Encrypted successfully.")
         except Exception as e:
-            ctk.CTkMessagebox(title="Encryption Error", message=str(e))
             self.set_status("Encryption failed.")
 
     def decrypt(self):
@@ -183,7 +184,6 @@ class PresentCipherApp:
             self.show_result(result)
             self.set_status("Decrypted successfully.")
         except Exception as e:
-            ctk.CTkMessagebox(title="Decryption Error", message=str(e))
             self.set_status("Decryption failed.")
 
     def show_result(self, text):

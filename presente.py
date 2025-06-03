@@ -2,6 +2,7 @@ import customtkinter as ctk
 import subprocess
 import sys
 import random
+import os
 
 try:
     import pyperclip
@@ -9,7 +10,6 @@ except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "pyperclip"])
     import pyperclip
 
-# PRESENT cipher core
 SBOX = [0xC, 0x5, 0x6, 0xB, 0x9, 0x0, 0xA, 0xD, 0x3, 0xE, 0xF, 0x8, 0x4, 0x7, 0x1, 0x2]
 SBOX_INV = [SBOX.index(x) for x in range(16)]
 PBOX = [0, 16, 32, 48, 1, 17, 33, 49, 2, 18, 34, 50, 3, 19, 35, 51,
@@ -74,8 +74,17 @@ def generate_random_key(): return ''.join(random.choices('0123456789ABCDEF', k=2
 class PresentCipherApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Encryption Pig - CustomTkinter")
-        self.root.configure(fg_color="#FADADD")  # <-- здесь поменял
+        self.root.title("Encryption Pig")
+        self.root.geometry("960x540")  
+        self.root.minsize(960, 540)
+
+        if os.path.exists("icon.ico"):
+            try:
+                self.root.iconbitmap("icon.ico")
+            except Exception as e:
+                print("Ошибка при установке иконки:", e)
+
+        self.root.configure(fg_color="#FADADD")
 
         ctk.set_appearance_mode("light")
         ctk.set_default_color_theme("blue")
@@ -83,23 +92,27 @@ class PresentCipherApp:
         font = ("TT Fors Trial", 14)
         text_color = "#382A2E"
         box_color = "#FFEEF3"
-        button_color = "#E491A5"
+        button_color = "#FB7E9D"
 
-    # остальные виджеты с fg_color=box_color для инпутов
 
+        border_width = 1
+        border_color = "#B1556B"
 
         ctk.CTkLabel(root, text="Text to Encrypt:", font=font, text_color=text_color).grid(row=0, column=0, padx=10, pady=(10, 0), sticky="w")
-        self.input_text = ctk.CTkTextbox(root, height=100, font=font, text_color=text_color, fg_color=box_color)
+        self.input_text = ctk.CTkTextbox(root, height=100, font=font, text_color=text_color, fg_color=box_color,
+                                        border_width=border_width, border_color=border_color)
         self.input_text.grid(row=0, column=1, padx=10, pady=(10, 0), sticky="ew")
         ctk.CTkButton(root, text="Paste to Encrypt", command=self.paste_to_encrypt, fg_color=button_color, text_color=text_color).grid(row=0, column=2, padx=5, pady=10)
 
         ctk.CTkLabel(root, text="Text to Decrypt:", font=font, text_color=text_color).grid(row=1, column=0, padx=10, pady=10, sticky="w")
-        self.decrypt_text = ctk.CTkTextbox(root, height=100, font=font, text_color=text_color, fg_color=box_color)
+        self.decrypt_text = ctk.CTkTextbox(root, height=100, font=font, text_color=text_color, fg_color=box_color,
+                                          border_width=border_width, border_color=border_color)
         self.decrypt_text.grid(row=1, column=1, padx=10, pady=10, sticky="ew")
         ctk.CTkButton(root, text="Paste to Decrypt", command=self.paste_to_decrypt, fg_color=button_color, text_color=text_color).grid(row=1, column=2, padx=5, pady=10)
 
         ctk.CTkLabel(root, text="Key:", font=font, text_color=text_color).grid(row=2, column=0, padx=10, pady=(0, 10), sticky="w")
-        self.key_entry = ctk.CTkEntry(root, placeholder_text="80-bit key (20 hex chars)", font=font, text_color=text_color, fg_color=box_color)
+        self.key_entry = ctk.CTkEntry(root, placeholder_text="80-bit key (20 hex chars)", font=font, text_color=text_color, fg_color=box_color,
+                                     border_width=border_width, border_color=border_color)
         self.key_entry.grid(row=2, column=1, padx=10, pady=(0, 10), sticky="ew")
 
         key_button_frame = ctk.CTkFrame(root, fg_color="transparent")
@@ -115,7 +128,8 @@ class PresentCipherApp:
         ctk.CTkButton(button_frame, text="Clear All", command=self.clear_all, fg_color=button_color, text_color=text_color).pack(side="left", padx=5)
 
         ctk.CTkLabel(root, text="Result:", font=font, text_color=text_color).grid(row=4, column=0, padx=10, pady=(0, 0), sticky="w")
-        self.result_text = ctk.CTkTextbox(root, height=100, font=font, text_color=text_color, fg_color=box_color)
+        self.result_text = ctk.CTkTextbox(root, height=100, font=font, text_color=text_color, fg_color=box_color,
+                                         border_width=border_width, border_color=border_color)
         self.result_text.grid(row=5, column=0, columnspan=3, padx=10, pady=10, sticky="nsew")
         self.result_text.configure(state='normal')
 
@@ -172,45 +186,42 @@ class PresentCipherApp:
             ctk.CTkMessagebox(title="Decryption Error", message=str(e))
             self.set_status("Decryption failed.")
 
-    def show_result(self, content):
+    def show_result(self, text):
         self.result_text.configure(state='normal')
         self.result_text.delete("1.0", "end")
-        self.result_text.insert("end", content)
+        self.result_text.insert("1.0", text)
         self.result_text.configure(state='disabled')
 
     def copy_result(self):
-        content = self.result_text.get("1.0", "end").strip()
-        if content:
-            pyperclip.copy(content)
-            self.set_status("Result copied.")
-
-    def copy_key(self):
-        key = self.key_entry.get().strip()
-        if key:
-            pyperclip.copy(key)
-            self.set_status("Key copied.")
+        text = self.result_text.get("1.0", "end").strip()
+        pyperclip.copy(text)
+        self.set_status("Result copied to clipboard.")
 
     def generate_key(self):
         key = generate_random_key()
         self.key_entry.delete(0, "end")
         self.key_entry.insert(0, key)
-        self.set_status("Random key generated.")
+        self.set_status("New key generated.")
+
+    def copy_key(self):
+        key = self.key_entry.get()
+        pyperclip.copy(key)
+        self.set_status("Key copied to clipboard.")
 
     def clear_all(self):
         self.input_text.delete("1.0", "end")
         self.decrypt_text.delete("1.0", "end")
-        self.key_entry.delete(0, "end")
         self.result_text.configure(state='normal')
         self.result_text.delete("1.0", "end")
         self.result_text.configure(state='disabled')
+        self.key_entry.delete(0, "end")
         self.set_status("Cleared all fields.")
 
-    def set_status(self, message):
-        self.status.configure(text=message)
+    def set_status(self, text):
+        self.status.configure(text=text)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     root = ctk.CTk()
-    root.geometry("900x600")
     app = PresentCipherApp(root)
     root.mainloop()

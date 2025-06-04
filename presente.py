@@ -7,9 +7,10 @@ from tkinter import font as tkfont
 
 try:
     import pyperclip
-except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "pyperclip"])
-    import pyperclip
+except ModuleNotFoundError:
+    print("Error: Module not found, use this command")
+    print("    pip install pyperclip")
+    sys.exit(1)
 
 FONTS_DIR = os.path.join(os.path.dirname(__file__), "fonts")
 FONT_FILE = os.path.join(FONTS_DIR, "TTForsTrial.ttf")
@@ -85,9 +86,15 @@ class PresentCipherApp:
         self.root.geometry("1280×720")
         self.root.minsize(1280, 720)
 
-        if os.path.exists("icon.ico"):
+        if getattr(sys, 'frozen', False):
+            base_path = sys._MEIPASS
+        else:
+            base_path = os.path.dirname(__file__)
+
+        icon_path = os.path.join(base_path, "icon.ico")
+        if os.path.exists(icon_path):
             try:
-                self.root.iconbitmap("icon.ico")
+                self.root.iconbitmap(icon_path)
             except Exception as e:
                 print("Ошибка при установке иконки:", e)
 
